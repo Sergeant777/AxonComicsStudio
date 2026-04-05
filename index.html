@@ -65,4 +65,126 @@
             </div>
 
             <div class="flex flex-col gap-4">
-                <div class="bg-slate-900 border border-slate-800 p-
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl">
+                    <h3 class="text-cyan-400 font-bold uppercase text-[10px] mb-3">1. Add Dialogue</h3>
+                    <textarea id="dialogueInput" rows="2" placeholder="What are they saying?" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:border-cyan-500 outline-none resize-none"></textarea>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl">
+                    <h3 class="text-cyan-400 font-bold uppercase text-[10px] mb-3">2. Scene</h3>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="changeBg(0x1e293b)" class="h-8 rounded bg-[#1e293b] border border-slate-600"></button>
+                        <button onclick="changeBg(0x065f46)" class="h-8 rounded bg-[#065f46] border border-slate-600"></button>
+                        <button onclick="changeBg(0x000000)" class="h-8 rounded bg-black border border-slate-600"></button>
+                        <button onclick="changeBg(0x312e81)" class="h-8 rounded bg-indigo-900 border border-slate-600"></button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl mt-auto">
+                    <button onclick="takePhoto()" id="btn-photo" class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-black py-5 rounded-2xl shadow-lg active:scale-95 transition-all uppercase tracking-widest text-lg">
+                        📸 SNAP PHOTO
+                    </button>
+                    <p class="text-center text-[10px] text-slate-500 mt-3 font-bold uppercase">
+                        #KIDOVATE PROJECT
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let scene, camera, renderer, controls, model;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1e293b);
+
+            const container = document.getElementById('canvas-container');
+            camera = new THREE.PerspectiveCamera(45, container.offsetWidth / container.offsetHeight, 0.1, 2000);
+            camera.position.set(0, 0, 8);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+            renderer.setSize(container.offsetWidth, container.offsetHeight);
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+            const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+            sun.position.set(5, 10, 7);
+            scene.add(sun);
+
+            animate();
+        }
+
+        document.getElementById('modelUpload').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            document.getElementById('upload-overlay').style.display = 'none';
+            
+            const url = URL.createObjectURL(file);
+            const loader = new THREE.GLTFLoader();
+
+            loader.load(url, (gltf) => {
+                if (model) scene.remove(model);
+                model = gltf.scene;
+
+                // --- THE GIGANTIC SCALE FIX ---
+                model.updateMatrixWorld(true);
+                const box = new THREE.Box3().setFromObject(model);
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                
+                // Force any model (giant or tiny) to a standard size of 4 units
+                const scale = 4 / maxDim;
+                model.scale.set(scale, scale, scale);
+
+                // Re-center perfectly
+                const center = box.getCenter(new THREE.Vector3());
+                model.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+                
+                scene.add(model);
+            });
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls) controls.update();
+            if (renderer) renderer.render(scene, camera);
+        }
+
+        function changeBg(color) {
+            scene.background = new THREE.Color(color);
+        }
+
+        document.getElementById('dialogueInput').addEventListener('input', (e) => {
+            const bubble = document.getElementById('speech-bubble');
+            const text = e.target.value.trim();
+            bubble.style.display = text ? 'block' : 'none';
+            bubble.innerText = text;
+        });
+
+        function takePhoto() {
+            const area = document.getElementById('capture-area');
+            html2canvas(area).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'Kidovate_Comic.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+        init();
+
+        window.addEventListener('resize', () => {
+            const container = document.getElementById('canvas-container');
+            if (!container || !camera || !renderer) return;
+            camera.aspect = container.offsetWidth / container.offsetHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.offsetWidth, container.offsetHeight);
+        });
+    </script>
+</body>
+</html>
