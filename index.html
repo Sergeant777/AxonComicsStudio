@@ -28,6 +28,11 @@
             border-width: 15px 15px 0 0; border-style: solid;
             border-color: white transparent transparent transparent;
         }
+        /* Gallery Image Style */
+        .gallery-img {
+            height: 150px; width: auto; border: 3px solid black; 
+            border-radius: 12px; flex-shrink: 0; box-shadow: 4px 4px 0px rgba(0,0,0,0.2);
+        }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
@@ -46,11 +51,8 @@
     <main class="flex-1 max-w-5xl mx-auto w-full p-6">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2 relative bg-slate-900 rounded-3xl overflow-hidden border-4 border-slate-800 h-[550px]" id="capture-area">
-                
-                <div id="speech-bubble" class="comic-bubble">TYPE SOMETHING!</div>
-
+                <div id="speech-bubble" class="comic-bubble">HELLO!</div>
                 <div id="canvas-container" class="w-full h-full"></div>
-                
                 <div id="upload-overlay" class="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center z-[60]">
                     <input type="file" id="modelUpload" accept=".glb" class="hidden">
                     <label for="modelUpload" class="bg-cyan-600 hover:bg-cyan-500 text-white font-black px-10 py-5 rounded-2xl cursor-pointer shadow-lg uppercase transition-all text-lg">
@@ -63,7 +65,7 @@
                 <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 flex flex-col gap-4 shadow-xl">
                     <div>
                         <label class="text-cyan-400 text-[10px] font-black uppercase mb-2 block tracking-widest">1. Dialogue</label>
-                        <input type="text" id="bubbleInput" placeholder="Character says..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500 font-bold">
+                        <input type="text" id="bubbleInput" placeholder="Type here..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500">
                     </div>
 
                     <div>
@@ -76,23 +78,21 @@
                         </div>
                     </div>
 
-                    <div class="pt-2">
-                        <button onclick="snapPanel()" class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-black py-4 rounded-xl shadow-lg transition-all text-lg active:scale-95">
-                            📸 SNAP PANEL
-                        </button>
-                    </div>
-                    <p class="text-[9px] text-slate-500 text-center uppercase font-bold">Tip: Drag the bubble to move it!</p>
+                    <button onclick="snapPanel()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl shadow-lg transition-all text-lg active:scale-95">
+                        📸 SNAP PANEL
+                    </button>
+                    <p class="text-[9px] text-slate-500 text-center uppercase font-bold italic">Drag bubble to move it!</p>
                 </div>
             </div>
         </div>
 
         <div class="mt-8 bg-slate-900 p-6 rounded-[32px] border border-slate-800 shadow-2xl">
-            <div class="flex justify-between items-center mb-4 px-2">
-                <h3 class="font-black italic text-xl tracking-tighter">COMIC STRIP</h3>
-                <button onclick="clearStrip()" class="text-[10px] font-bold text-slate-500 hover:text-red-400 uppercase tracking-widest">Clear All</button>
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-black italic text-xl tracking-tighter">COMIC STRIP GALLERY</h3>
+                <button onclick="clearStrip()" class="text-[10px] font-bold text-slate-500 hover:text-red-400 uppercase">Clear All</button>
             </div>
-            <div id="comic-strip" class="flex gap-4 overflow-x-auto pb-4 min-h-[160px] scrollbar-hide">
-                <p id="empty-msg" class="text-slate-700 font-black uppercase text-xs m-auto italic">Gallery is empty...</p>
+            <div id="comic-strip" class="flex gap-4 overflow-x-auto pb-4 min-h-[160px]">
+                <p id="empty-msg" class="text-slate-700 font-black uppercase text-xs m-auto">Gallery is empty...</p>
             </div>
         </div>
     </main>
@@ -129,19 +129,16 @@
             loader.load(URL.createObjectURL(file), (gltf) => {
                 if (model) scene.remove(model);
                 model = gltf.scene;
-                
                 const box = new THREE.Box3().setFromObject(model);
                 const size = box.getSize(new THREE.Vector3());
                 const maxDim = Math.max(size.x, size.y, size.z);
                 let scale = 5.5 / (maxDim || 1); 
                 model.scale.set(scale, scale, scale);
-                
                 const center = box.getCenter(new THREE.Vector3());
                 model.position.x = -center.x * scale;
                 model.position.z = -center.z * scale;
-                // LANDING LOWER: Feet close to the floor
+                // LANDING AT THE BOTTOM
                 model.position.y = (-box.min.y * scale) - 3.4; 
-                
                 scene.add(model);
                 controls.reset();
             });
@@ -153,73 +150,15 @@
             if (renderer) renderer.render(scene, camera);
         }
 
-        // BUBBLE TEXT LOGIC
+        // SPEECH BUBBLE & DRAGGING
         document.getElementById('bubbleInput').addEventListener('input', (e) => {
             const bubble = document.getElementById('speech-bubble');
-            if (e.target.value.length > 0) {
-                bubble.style.display = 'block';
-                bubble.innerText = e.target.value;
-            } else {
-                bubble.style.display = 'none';
-            }
+            bubble.style.display = e.target.value.length > 0 ? 'block' : 'none';
+            bubble.innerText = e.target.value;
         });
 
-        // DRAGGABLE BUBBLE LOGIC
         const bubble = document.getElementById('speech-bubble');
         let isDragging = false;
-        let offsetX, offsetY;
+        let startX, startY, startLeft, startTop;
 
-        bubble.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            offsetX = e.clientX - bubble.offsetLeft;
-            offsetY = e.clientY - bubble.offsetTop;
-            bubble.style.cursor = 'grabbing';
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (isDragging) {
-                bubble.style.left = (e.clientX - offsetX) + 'px';
-                bubble.style.top = (e.clientY - offsetY) + 'px';
-                bubble.style.transform = 'none'; 
-            }
-        });
-
-        document.addEventListener('mouseup', () => {
-            isDragging = false;
-            bubble.style.cursor = 'move';
-        });
-
-        function changeBg(color) { scene.background = new THREE.Color(color); }
-
-        // GALLERY LOGIC
-        function snapPanel() {
-            const area = document.getElementById('capture-area');
-            const gallery = document.getElementById('comic-strip');
-            const msg = document.getElementById('empty-msg');
-            
-            html2canvas(area, { backgroundColor: null }).then(canvas => {
-                if (msg) msg.remove();
-                const img = document.createElement('img');
-                img.src = canvas.toDataURL();
-                img.className = "h-32 rounded-xl border-2 border-black/50 shadow-lg shrink-0";
-                gallery.appendChild(img);
-                gallery.scrollLeft = gallery.scrollWidth;
-            });
-        }
-
-        function clearStrip() {
-            document.getElementById('comic-strip').innerHTML = '<p id="empty-msg" class="text-slate-700 font-black uppercase text-xs m-auto italic">Gallery is empty...</p>';
-        }
-
-        init();
-        window.addEventListener('resize', () => {
-            const container = document.getElementById('canvas-container');
-            if(container) {
-                camera.aspect = container.offsetWidth / container.offsetHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(container.offsetWidth, container.offsetHeight);
-            }
-        });
-    </script>
-</body>
-</html>
+        bubble.addEventListener('
