@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dummy 13: Comic Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Three.js for 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- html2canvas for taking the screenshot -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        /* Comic Book Speech Bubble CSS */
+        .comic-bubble {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffffff;
+            border: 4px solid #000;
+            border-radius: 30px;
+            padding: 15px 30px;
+            text-align: center;
+            font-weight: 900;
+            color: #000;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            box-shadow: 8px 8px 0px rgba(0,0,0,1);
+            z-index: 15;
+            max-width: 80%;
+            display: none;
+            word-wrap: break-word;
+        }
+        .comic-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            border-width: 20px 20px 0 0;
+            border-style: solid;
+            border-color: #ffffff transparent transparent transparent;
+            display: block;
+            width: 0;
+            z-index: 1;
+        }
+        .comic-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -26px;
+            left: 48%;
+            border-width: 24px 24px 0 0;
+            border-style: solid;
+            border-color: #000 transparent transparent transparent;
+            display: block;
+            width: 0;
+            z-index: 0;
+        }
+
+        .tab-active { border-bottom: 4px solid #06b6d4; color: #06b6d4; }
+        .tab-inactive { color: #64748b; border-bottom: 4px solid transparent; }
+        .tab-inactive:hover { color: #cbd5e1; }
+        
+        /* Hide scrollbars */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Navbar -->
+    <nav class="bg-slate-900 border-b border-slate-800 shadow-lg sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">🦸‍♂️</span>
+                    <span class="font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 text-xl">
+                        DUMMY 13 STUDIO
+                    </span>
+                </div>
+                <div class="flex gap-6 font-bold text-sm tracking-widest uppercase h-full">
+                    <button onclick="switchTab('studio')" id="btn-studio" class="tab-active flex items-center px-2 h-full transition-colors">Comic Studio</button>
+                    <button onclick="switchTab('about')" id="btn-about" class="tab-inactive flex items-center px-2 h-full transition-colors">The Makers</button>
+                    <button onclick="switchTab('updates')" id="btn-updates" class="tab-inactive flex items-center px-2 h-full transition-colors">Updates</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-5xl mx-auto w-full p-4 md:p-6">
+
+        <!-- ============================== -->
+        <!-- TAB 1: THE COMIC STUDIO        -->
+        <!-- ============================== -->
+        <section id="tab-studio" class="block animate-fade-in">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Left Column: The 3D Viewport -->
+                <div class="lg:col-span-2">
+                    <!-- The capture-area is what html2canvas will take a picture of -->
+                    <div id="capture-area" class="relative bg-slate-900 rounded-3xl overflow-hidden border-4 border-slate-800 shadow-2xl h-[500px]">
+                        
+                        <!-- Speech Bubble Overlay -->
+                        <div id="speech-bubble" class="comic-bubble"></div>
+
+                        <!-- 3D Canvas -->
+                        <div id="canvas-container" class="w-full h-full cursor-move"></div>
+
+                        <!-- Initial Upload Screen inside the canvas -->
+                        <div id="upload-overlay" class="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center z-20 p-6 overflow-y-auto">
+                            <div class="text-5xl mb-2 animate-bounce">🎬</div>
+                            <h2 class="text-2xl md:text-3xl font-black text-white uppercase tracking-widest mb-6 text-center">Director's Chair</h2>
+                            
+                            <div class="bg-slate-900 border border-slate-700 p-5 md:p-6 rounded-2xl max-w-md w-full mb-6 shadow-xl text-left">
+                                <h3 class="text-cyan-400 font-bold uppercase tracking-widest text-xs mb-4 flex items-center gap-2">
+                                    <span>📚</span> How to get your character:
+                                </h3>
+                                <ol class="text-slate-300 text-sm space-y-3 list-decimal list-inside">
+                                    <li>Go to <a href="https://www.mixamo.com" target="_blank" class="text-cyan-400 hover:text-cyan-300 underline font-bold">Mixamo.com</a> (Free)</li>
+                                    <li>Click <b>Upload Character</b> and select your Standing Dummy 13 <b>.GLB</b> file.</li>
+                                    <li>Choose any cool animation (like a punch, wave, or dance).</li>
+                                    <li>Click Download. Ensure format is <b>.GLB</b> and you select <b>With Skin</b>!</li>
+                                </ol>
+                            </div>
+
+                            <input type="file" id="modelUpload" accept=".glb" class="hidden">
+                            <label for="modelUpload" class="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black px-8 py-4 rounded-2xl shadow-[0_0_20px_rgba(6,182,212,0.3)] cursor-pointer active:scale-95 transition-all uppercase tracking-widest flex items-center gap-2">
+                                <span>📁</span> Upload to Studio
+                            </label>
+                        </div>
+                    </div>
+
+                    <p class="text-center text-slate-500 text-xs mt-3 font-bold tracking-widest uppercase">
+                        👆 Click and drag to rotate the camera! Scroll to zoom.
+                    </p>
+                </div>
+
+                <!-- Right Column: Controls -->
+                <div class="flex flex-col gap-4">
+                    
+                    <!-- Dialogue Control -->
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl">
+                        <h3 class="text-cyan-400 font-bold uppercase tracking-widest text-xs mb-3">1. Add Dialogue</h3>
+                        <textarea id="dialogueInput" rows="3" placeholder="Type what your Dummy 13 is saying here..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-cyan-500 transition-colors resize-none"></textarea>
+                    </div>
+
+                    <!-- Background Control -->
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl">
+                        <h3 class="text-cyan-400 font-bold uppercase tracking-widest text-xs mb-3">2. Choose Scene</h3>
+                        <div class="grid grid-cols-4 gap-2">
+                            <!-- Solid Colors -->
+                            <button onclick="setBackground('color', 0x1e293b)" class="h-10 rounded-lg bg-[#1e293b] border-2 border-slate-700 hover:border-cyan-400 active:scale-95 transition-all" title="Dark Studio"></button>
+                            <button onclick="setBackground('color', 0x065f46)" class="h-10 rounded-lg bg-[#065f46] border-2 border-slate-700 hover:border-cyan-400 active:scale-95 transition-all" title="Green Screen"></button>
+                            <!-- Images (Replace the URLs below with your own generated images!) -->
+                            <button onclick="setBackground('image', 'https://images.unsplash.com/photo-1618553255141-86f78f8fc857?q=80&w=800&auto=format&fit=crop')" class="h-10 rounded-lg bg-cover bg-center border-2 border-slate-700 hover:border-cyan-400 active:scale-95 transition-all" style="background-image: url('https://images.unsplash.com/photo-1618553255141-86f78f8fc857?q=80&w=100&auto=format&fit=crop')" title="Sci-Fi Corridor"></button>
+                            <button onclick="setBackground('image', 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=800&auto=format&fit=crop')" class="h-10 rounded-lg bg-cover bg-center border-2 border-slate-700 hover:border-cyan-400 active:scale-95 transition-all" style="background-image: url('https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=100&auto=format&fit=crop')" title="Neon City"></button>
+                        </div>
+                    </div>
+
+                    <!-- Animation Control -->
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl">
+                        <h3 class="text-cyan-400 font-bold uppercase tracking-widest text-xs mb-3">3. Strike a Pose</h3>
+                        <p class="text-slate-400 text-xs mb-3">Watch the animation and click pause when you find the perfect pose for your comic panel!</p>
+                        <button id="btn-pause" onclick="toggleAnimation()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-black py-3 rounded-xl border border-slate-700 active:scale-95 transition-all uppercase tracking-widest disabled:opacity-50">
+                            ⏸️ Pause Pose
+                        </button>
+                    </div>
+
+                    <!-- Camera Control -->
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl mt-auto">
+                        <h3 class="text-cyan-400 font-bold uppercase tracking-widest text-xs mb-3">4. Action!</h3>
+                        <button onclick="takePhoto()" id="btn-photo" class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white font-black py-4 rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.4)] active:scale-95 transition-all text-lg flex justify-center items-center gap-2">
+                            <span>📸</span> SNAP PANEL
+                        </button>
+                        <p class="text-center text-[10px] text-slate-500 mt-3 font-bold uppercase tracking-widest">
+                            Share on social media with <br><span class="text-cyan-400">#AxonStudio</span>
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ============================== -->
+            <!-- NEW: COMIC STRIP BUILDER       -->
+            <!-- ============================== -->
+            <div class="mt-8 bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl">
+                <div class="flex justify-between items-end mb-4">
+                    <div>
+                        <h3 class="text-2xl font-black italic tracking-tighter text-white">YOUR COMIC STRIP</h3>
+                        <p class="text-slate-400 text-xs uppercase tracking-widest mt-1">Take multiple photos to build a story!</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="clearStrip()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-xl text-sm transition-all active:scale-95">Clear All</button>
+                        <button onclick="downloadStrip()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black py-2 px-6 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all active:scale-95 flex items-center gap-2">
+                            <span>📥</span> SAVE FULL COMIC
+                        </button>
+                    </div>
+                </div>
+
+                <!-- The board that holds the panels and gets downloaded -->
+                <div class="overflow-x-auto pb-4">
+                    <div id="comic-strip-board" class="bg-white p-4 flex gap-4 min-w-min min-h-[200px] items-center rounded-sm">
+                        <!-- Placeholder when empty -->
+                        <div id="strip-placeholder" class="w-full text-center text-slate-400 font-bold uppercase tracking-widest py-10">
+                            No panels yet. Snap a panel to start your comic!
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ============================== -->
+        <!-- TAB 2: ABOUT THE MAKERS        -->
+        <!-- ============================== -->
+        <section id="tab-about" class="hidden animate-fade-in">
+            <div class="max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-8 md:p-12 shadow-2xl mt-4">
+                <div class="text-center mb-8">
+                    <h2 class="text-4xl font-black italic tracking-tighter text-white mb-2">MEET THE MAKERS</h2>
+                    <div class="w-24 h-1 bg-gradient-to-r from-cyan-500 to-blue-500 mx-auto rounded-full"></div>
+                </div>
+
+                <div class="prose prose-invert prose-lg mx-auto">
+                    <!-- TIP: Replace this text with the answers from your interview! -->
+                    <p class="text-slate-300 leading-relaxed">
+                        Welcome to our 3D Printing Lab! We are two brothers who turned our bedroom into a robotics factory. It all started when we got our first 3D printer and realized we could bring our imagination to life.
+                    </p>
+                    <p class="text-slate-300 leading-relaxed mt-4">
+                        We don't just want to sell you a toy. We want to give you a canvas for your creativity. That is why we build these Dummy 13 figures and created this digital Comic Studio. 
+                    </p>
+                    <div class="bg-slate-950 border-l-4 border-cyan-500 p-6 my-8 rounded-r-2xl italic text-slate-400">
+                        "The coolest color combination we've ever printed is definitely the Toxic Neon Green. But we can't wait to see what adventures you create with yours!" <br>
+                        <span class="text-cyan-400 font-bold not-italic block mt-2">— The Founders</span>
+                    </div>
+                    <p class="text-slate-300 leading-relaxed">
+                        If you bought a figure from us today, thank you! Be sure to take a screenshot in the Comic Studio and tag us so we can feature you on our Brag Board next week!
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================== -->
+        <!-- TAB 3: ROADMAP & UPDATES       -->
+        <!-- ============================== -->
+        <section id="tab-updates" class="hidden animate-fade-in">
+            <div class="max-w-3xl mx-auto mt-4">
+                <h2 class="text-3xl font-black italic tracking-tighter text-white mb-8 text-center">TRANSMISSION LOG</h2>
+                
+                <div class="space-y-6">
+                    <!-- Update 1 -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-cyan-500"></div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-xl font-bold text-white">Event Launch!</h3>
+                            <span class="text-xs font-bold text-cyan-500 bg-cyan-500/10 px-3 py-1 rounded-full">April 11, 2026</span>
+                        </div>
+                        <p class="text-slate-400 text-sm">We are live at the event! Grab your physical Dummy 13 figure and scan the QR code to use our brand new Digital Comic Studio.</p>
+                    </div>
+
+                    <!-- Update 2 -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden opacity-70">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-slate-700"></div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-xl font-bold text-white">Coming Soon: Hall of Fame</h3>
+                            <span class="text-xs font-bold text-slate-500 bg-slate-800 px-3 py-1 rounded-full">May 2026</span>
+                        </div>
+                        <p class="text-slate-400 text-sm">We will be adding a Brag Board to the website! Tag us in your Comic Studio screenshots on social media, and we will pick our favorites to display here permanently.</p>
+                    </div>
+
+                    <!-- Update 3 -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden opacity-70">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-slate-700"></div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-xl font-bold text-white">Coming Soon: AI Mirror Room</h3>
+                            <span class="text-xs font-bold text-slate-500 bg-slate-800 px-3 py-1 rounded-full">Summer 2026</span>
+                        </div>
+                        <p class="text-slate-400 text-sm">Top secret development is underway. Soon, your webcam will track your physical body movements and make your digital Dummy 13 copy you in real-time!</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+<script>
+    // ==========================================
+    // TAB NAVIGATION LOGIC
+    // ==========================================
+    const tabs = ['studio', 'about', 'updates'];
+    function switchTab(selectedTab) {
+        tabs.forEach(tab => {
+            // Update Buttons
+            const btn = document.getElementById(`btn-${tab}`);
+            if (tab === selectedTab) {
+                btn.className = "tab-active flex items-center px-2 h-full transition-colors";
+            } else {
+                btn.className = "tab-inactive flex items-center px-2 h-full transition-colors";
+            }
+            // Update Content
+            const section = document.getElementById(`tab-${tab}`);
+            if (tab === selectedTab) {
+                section.classList.remove('hidden');
+                section.classList.add('block');
+            } else {
+                section.classList.add('hidden');
+                section.classList.remove('block');
+            }
+        });
+    }
+
+    // ==========================================
+    // COMIC STUDIO & 3D LOGIC
+    // ==========================================
+    const container = document.getElementById('canvas-container');
+    const uploadOverlay = document.getElementById('upload-overlay');
+    const dialogueInput = document.getElementById('dialogueInput');
+    const speechBubble = document.getElementById('speech-bubble');
+    const btnPause = document.getElementById('btn-pause');
+    
+    let scene, camera, renderer, orbitControls;
+    let clock = new THREE.Clock();
+    let mixer, animationAction;
+    let isPlaying = true;
+    let modelLoaded = false;
+
+    // 1. Initialize the 3D Scene
+    function init3D() {
+        scene = new THREE.Scene();
+        // A nice, slightly lighter comic book background color
+        scene.background = new THREE.Color(0x1e293b); 
+
+        camera = new THREE.PerspectiveCamera(45, container.offsetWidth / container.offsetHeight, 0.1, 100);
+        camera.position.set(0, 0, 4); // CHANGED: Lowered the camera to center height
+
+        // Crucial: preserveDrawingBuffer must be true so html2canvas can take a picture of it!
+        renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+        renderer.setSize(container.offsetWidth, container.offsetHeight);
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        container.appendChild(renderer.domElement);
+
+        // Controls to rotate camera
+        orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+        orbitControls.enableDamping = true;
+        orbitControls.dampingFactor = 0.05;
+        orbitControls.target.set(0, 0, 0); // CHANGED: Force camera to look dead center
+
+        // Lighting
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(5, 10, 7);
+        scene.add(dirLight);
+        
+        // Add a cool colored backlight for dramatic comic effect
+        const backLight = new THREE.DirectionalLight(0x06b6d4, 1.5); // Cyan backlight
+        backLight.position.set(-5, 5, -5);
+        scene.add(backLight);
+
+        animate();
+    }
+
+    // 2. Handle File Upload
+    document.getElementById('modelUpload').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        uploadOverlay.classList.add('hidden'); // Hide the upload screen
+        
+        const url = URL.createObjectURL(file);
+        const loader = new THREE.GLTFLoader();
+
+        loader.load(url, (gltf) => {
+            const model = gltf.scene;
+            
+            // NEW: Meshy Clean-up! Remove any invisible cameras or lights Meshy baked into the file
+            const junkToRemove = [];
+            model.traverse((child) => {
+                if (child.isCamera || child.isLight) junkToRemove.push(child);
+            });
+            junkToRemove.forEach(child => {
+                if (child.parent) child.parent.remove(child);
+            });
+
+            // Auto-scale to fit screen
+            const box = new THREE.Box3().setFromObject(model);
+            const size = box.getSize(new THREE.Vector3());
+            const scale = 2.5 / (Math.max(size.x, size.y, size.z) || 1); 
+            model.scale.set(scale, scale, scale);
+            
+            // Center it
+            const center = box.getCenter(new THREE.Vector3());
+            model.position.x = -center.x * scale;
+            model.position.z = -center.z * scale;
+            model.position.y = -center.y * scale; // CHANGED: Locks the exact center of the model to the screen
+
+            scene.add(model);
+            modelLoaded = true;
+
+            // Check for Mixamo Animations!
+            if (gltf.animations && gltf.animations.length > 0) {
+                mixer = new THREE.AnimationMixer(model);
+                animationAction = mixer.clipAction(gltf.animations[0]);
+                animationAction.play();
+                btnPause.disabled = false;
+            } else {
+                btnPause.innerText = "No Animation Found";
+                btnPause.disabled = true;
+            }
+
+        });
+    });
+
+    // 3. Animation Loop
+    function animate() {
+        requestAnimationFrame(animate);
+        
+        const delta = clock.getDelta();
+        if (mixer && isPlaying) {
+            mixer.update(delta);
+        }
+        
+        orbitControls.update();
+        renderer.render(scene, camera);
+    }
+
+    // 4. Play/Pause Control
+    function toggleAnimation() {
+        if (!mixer) return;
+        isPlaying = !isPlaying;
+        if (isPlaying) {
+            btnPause.innerText = "⏸️ Pause Pose";
+            btnPause.classList.replace('bg-green-600', 'bg-slate-800');
+        } else {
+            btnPause.innerText = "▶️ Play Animation";
+            btnPause.classList.replace('bg-slate-800', 'bg-green-600');
+        }
+    }
+
+    // 5. Speech Bubble Text Sync
+    dialogueInput.addEventListener('input', (e) => {
+        const text = e.target.value.trim();
+        if (text === '') {
+            speechBubble.style.display = 'none';
+        } else {
+            speechBubble.style.display = 'block';
+            speechBubble.innerText = text;
+        }
+    });
+
+    // Background Selection Logic
+    function setBackground(type, value) {
+        if (!scene) return;
+        
+        if (type === 'color') {
+            scene.background = new THREE.Color(value);
+        } else if (type === 'image') {
+            const loader = new THREE.TextureLoader();
+            loader.load(value, (texture) => {
+                texture.encoding = THREE.sRGBEncoding;
+                scene.background = texture;
+            });
+        }
+    }
+
+    // 6. Handle Window Resizing safely
+    window.addEventListener('resize', () => {
+        if(camera && renderer && container.offsetWidth > 0) {
+            camera.aspect = container.offsetWidth / container.offsetHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.offsetWidth, container.offsetHeight);
+        }
+    });
+
+    // ==========================================
+    // SCREENSHOT & COMIC STRIP LOGIC (html2canvas)
+    // ==========================================
+    function takePhoto() {
+        if (!modelLoaded) {
+            alert("Please load a character first!");
+            return;
+        }
+
+        const captureArea = document.getElementById('capture-area');
+        const btnPhoto = document.getElementById('btn-photo');
+        const stripBoard = document.getElementById('comic-strip-board');
+        const placeholder = document.getElementById('strip-placeholder');
+        
+        // Visual feedback
+        btnPhoto.innerHTML = "Processing...";
+        btnPhoto.classList.add('opacity-50');
+
+        // html2canvas takes a picture of the 3D canvas AND the HTML speech bubble together
+        html2canvas(captureArea, {
+            backgroundColor: null, // Keep the background transparent/existing
+            useCORS: true
+        }).then(canvas => {
+            // NEW: Add to comic strip instead of downloading immediately
+            const image = canvas.toDataURL("image/png");
+            
+            // Remove placeholder if it exists
+            if (placeholder) placeholder.style.display = 'none';
+
+            // Create panel element
+            const panel = document.createElement('div');
+            panel.className = 'relative shrink-0 border-4 border-black group';
+            panel.style.width = '300px'; 
+            
+            panel.innerHTML = `
+                <img src="${image}" class="w-full h-auto block">
+                <button onclick="this.parentElement.remove(); checkEmptyStrip();" class="absolute top-2 right-2 bg-red-600 text-white w-8 h-8 rounded-full font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center shadow-lg cursor-pointer">X</button>
+            `;
+            
+            stripBoard.appendChild(panel);
+
+            // Reset button
+            btnPhoto.innerHTML = "<span>📸</span> SNAP PANEL";
+            btnPhoto.classList.remove('opacity-50');
+            
+            // Auto-scroll to the right so they see the new panel
+            stripBoard.parentElement.scrollLeft = stripBoard.parentElement.scrollWidth;
+        });
+    }
+
+    function checkEmptyStrip() {
+        const stripBoard = document.getElementById('comic-strip-board');
+        const placeholder = document.getElementById('strip-placeholder');
+        const panels = stripBoard.querySelectorAll('.shrink-0');
+        if (panels.length === 0 && placeholder) {
+            placeholder.style.display = 'block';
+        }
+    }
+
+    function clearStrip() {
+        if(confirm("Are you sure you want to clear your comic strip?")) {
+            const stripBoard = document.getElementById('comic-strip-board');
+            const placeholder = document.getElementById('strip-placeholder');
+            const panels = stripBoard.querySelectorAll('.shrink-0');
+            panels.forEach(p => p.remove());
+            if (placeholder) placeholder.style.display = 'block';
+        }
+    }
+
+    function downloadStrip() {
+        const stripBoard = document.getElementById('comic-strip-board');
+        const panels = stripBoard.querySelectorAll('.shrink-0');
+        
+        if (panels.length === 0) {
+            alert("Snap some panels first to build your comic!");
+            return;
+        }
+
+        // Temporarily hide the red "X" delete buttons so they aren't in the final comic
+        const deleteBtns = stripBoard.querySelectorAll('button');
+        deleteBtns.forEach(b => b.style.display = 'none');
+
+        // Take a picture of the entire Strip Board!
+        html2canvas(stripBoard, {
+            backgroundColor: '#ffffff', // Force white background for the comic page look
+            useCORS: true
+        }).then(canvas => {
+            const image = canvas.toDataURL("image/png");
+            const link = document.createElement('a');
+            link.download = 'Axon_Studio_Comic.png';
+            link.href = image;
+            link.click();
+
+            // Bring delete buttons back
+            deleteBtns.forEach(b => b.style.display = '');
+        });
+    }
+
+    // Start 3D Engine on load
+    init3D();
+
+</script>
+</body>
+</html>
