@@ -3,162 +3,411 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kidovate Comic Studio</title>
+    <title>Kidovate | Dummy 13 Scene Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        .tab-active { border-bottom: 4px solid #06b6d4; color: #06b6d4; }
-        .tab-inactive { color: #64748b; border-bottom: 4px solid transparent; }
-        .comic-bubble {
-            position: absolute; top: 40px; left: 50%; transform: translateX(-50%);
-            background: white; border: 4px solid black; border-radius: 30px;
-            padding: 12px 20px; text-align: center; font-weight: 900;
-            color: black; font-size: 1.1rem; text-transform: uppercase;
-            box-shadow: 6px 6px 0px rgba(0,0,0,1); z-index: 50;
-            display: none; max-width: 80%; cursor: move; user-select: none;
+        @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;900&display=swap');
+        
+        .font-comic { font-family: 'Bangers', system-ui; letter-spacing: 0.05em; }
+        .font-sans { font-family: 'Inter', sans-serif; }
+
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
         }
+
+        .comic-bubble {
+            position: absolute; top: 15%; left: 50%; background: white; 
+            border: 4px solid black; border-radius: 40px; padding: 20px 30px; 
+            text-align: center; font-weight: 900; color: black; font-size: 1.5rem; 
+            text-transform: uppercase; box-shadow: 10px 10px 0px rgba(0,0,0,1); 
+            z-index: 100; max-width: 280px; display: none; line-height: 1.1;
+            cursor: move; user-select: none; animation: floating 3s ease-in-out infinite;
+        }
+
         .comic-bubble::after {
-            content: ''; position: absolute; bottom: -15px; left: 50%;
-            border-width: 15px 15px 0 0; border-style: solid;
+            content: ''; position: absolute; bottom: -25px; left: 30px;
+            border-width: 25px 25px 0 0; border-style: solid;
             border-color: white transparent transparent transparent;
         }
+
+        .scene-card {
+            cursor: pointer; border: 3px solid transparent; transition: all 0.2s;
+            overflow: hidden; border-radius: 12px; position: relative;
+        }
+        .scene-card:hover { border-color: #06b6d4; transform: scale(1.05); }
+        .scene-card.active { border-color: #06b6d4; box-shadow: 0 0 15px #06b6d4; }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans overflow-x-hidden">
+<body class="bg-slate-950 text-white min-h-screen flex flex-col font-sans overflow-x-hidden">
 
-    <nav class="bg-slate-900 border-b border-slate-800 shadow-lg sticky top-0 z-50">
-        <div class="max-w-5xl mx-auto px-4 flex justify-between items-center h-16">
-            <span class="font-black italic text-cyan-400 text-xl uppercase tracking-tighter">KIDOVATE STUDIO</span>
-            <div class="flex gap-6 font-bold text-sm uppercase h-full">
-                <a href="index.html" class="tab-active flex items-center px-2 h-full">Studio</a>
-                <a href="about.html" class="tab-inactive flex items-center px-2 h-full">About</a>
-                <a href="updates.html" class="tab-inactive flex items-center px-2 h-full">Updates</a>
+    <header class="bg-black border-b-4 border-cyan-500 p-4 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-cyan-500 text-black p-2 rounded-lg font-black text-2xl rotate-3">K</div>
+                <h1 class="text-3xl font-comic italic tracking-widest text-white uppercase">Kidovate <span class="text-cyan-400 text-2xl">Scene Studio</span></h1>
+            </div>
+            <div class="hidden md:flex gap-4 text-xs font-black uppercase tracking-tighter">
+                <span class="text-slate-400">Comic Creator v2.2</span>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <main class="flex-1 max-w-5xl mx-auto w-full p-6">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-2 relative bg-slate-900 rounded-3xl overflow-hidden border-4 border-slate-800 h-[500px]" id="capture-area">
-                <div id="speech-bubble" class="comic-bubble">HELLO!</div>
-                <div id="canvas-container" class="w-full h-full"></div>
-                <div id="upload-overlay" class="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center z-[60]">
-                    <input type="file" id="modelUpload" accept=".glb" class="hidden">
-                    <label for="modelUpload" class="bg-cyan-600 hover:bg-cyan-500 text-white font-black px-10 py-5 rounded-2xl cursor-pointer shadow-lg uppercase transition-all">
-                        📁 Upload .GLB
-                    </label>
-                </div>
-            </div>
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden">
+        
+        <!-- Sidebar Controls -->
+        <div class="lg:col-span-3 bg-slate-900 border-r border-slate-800 p-6 flex flex-col gap-6 overflow-y-auto h-[calc(100vh-80px)]">
+            
+            <section>
+                <h3 class="text-cyan-400 font-comic text-xl mb-3 uppercase">1. Load Actor</h3>
+                <input type="file" id="modelUpload" accept=".glb,.gltf" class="hidden">
+                <label for="modelUpload" id="uploadLabel" class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-700 rounded-2xl hover:border-cyan-500 cursor-pointer transition-all bg-slate-950/50 group text-center">
+                    <span class="text-3xl mb-1 group-hover:scale-110 transition-transform">🤖</span>
+                    <span class="text-[10px] font-black uppercase text-slate-400">Upload Dummy 13 (.glb)</span>
+                </label>
+            </section>
 
-            <div class="flex flex-col gap-4">
-                <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 flex flex-col gap-4 shadow-xl">
-                    <input type="text" id="bubbleInput" placeholder="Dialogue..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500">
-                    
-                    <div class="grid grid-cols-4 gap-2">
-                        <button onclick="changeBg(0x1e293b)" class="h-8 rounded bg-slate-700 border border-white/20"></button>
-                        <button onclick="changeBg(0x064e3b)" class="h-8 rounded bg-emerald-900 border border-white/20"></button>
-                        <button onclick="changeBg(0x450a0a)" class="h-8 rounded bg-red-950 border border-white/20"></button>
-                        <button onclick="changeBg(0x075985)" class="h-8 rounded bg-sky-800 border border-white/20"></button>
+            <section>
+                <h3 class="text-cyan-400 font-comic text-xl mb-3 uppercase">2. Build The World</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="scene-card active" onclick="changeBG('space', this)">
+                        <img src="https://images.unsplash.com/photo-1614730321146-b6fa6a46bac4?q=80&w=400&auto=format&fit=crop" class="h-16 w-full object-cover">
+                        <span class="absolute bottom-0 inset-x-0 bg-black/60 text-[8px] font-black uppercase text-center py-1">Deep Space</span>
                     </div>
+                    <div class="scene-card" onclick="changeBG('city', this)">
+                        <img src="https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=400&auto=format&fit=crop" class="h-16 w-full object-cover">
+                        <span class="absolute bottom-0 inset-x-0 bg-black/60 text-[8px] font-black uppercase text-center py-1">Cyber City</span>
+                    </div>
+                    <div class="scene-card" onclick="changeBG('volcano', this)">
+                        <img src="https://images.unsplash.com/photo-1531000164940-cde686a49fc4?q=80&w=400&auto=format&fit=crop" class="h-16 w-full object-cover">
+                        <span class="absolute bottom-0 inset-x-0 bg-black/60 text-[8px] font-black uppercase text-center py-1">Volcano</span>
+                    </div>
+                    <div class="scene-card" onclick="changeBG('dojo', this)">
+                        <img src="https://images.unsplash.com/photo-1555597673-b21d5c935865?q=80&w=400&auto=format&fit=crop" class="h-16 w-full object-cover">
+                        <span class="absolute bottom-0 inset-x-0 bg-black/60 text-[8px] font-black uppercase text-center py-1">Dojo</span>
+                    </div>
+                </div>
+            </section>
 
-                    <button onclick="snapPanel()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl shadow-lg active:scale-95 transition-all">
-                        📸 SNAP PANEL
+            <section>
+                <h3 class="text-cyan-400 font-comic text-xl mb-3 uppercase text-center">3. Pose & Position</h3>
+                <div class="grid grid-cols-2 gap-2 mb-4">
+                    <button onclick="cycleAnimation()" class="bg-slate-800 hover:bg-slate-700 p-3 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center gap-1 active:scale-95 transition-transform">
+                        <span>🔄</span> Next Move
+                    </button>
+                    <button id="btn-pause" onclick="togglePause()" class="bg-slate-800 hover:bg-slate-700 p-3 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center gap-1 active:scale-95 transition-transform">
+                        <span id="pause-icon">⏸️</span> <span id="pause-text">Pause</span>
                     </button>
                 </div>
-            </div>
+                
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-4">
+                    <!-- Grounding Offset -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-[9px] font-black uppercase text-slate-500">Feet Height</label>
+                            <button onclick="resetHeight()" class="text-[8px] font-bold text-cyan-500 uppercase">Reset</button>
+                        </div>
+                        <input type="range" id="heightOffset" min="-2" max="2" step="0.05" value="0" class="w-full accent-cyan-500 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <!-- Flight Mode Toggle -->
+                    <button id="btn-flight" onclick="toggleFlight()" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-lg text-[9px] font-black uppercase flex items-center justify-center gap-2 hover:border-cyan-500 transition-colors">
+                        <span id="flight-icon">🦶</span> <span id="flight-text">Grounded</span>
+                    </button>
+                </div>
+            </section>
+
+            <section>
+                <h3 class="text-cyan-400 font-comic text-xl mb-2 uppercase">4. Add Dialogue</h3>
+                <textarea id="dialogueInput" rows="2" placeholder="DRAG BUBBLE TO MOVE..." class="w-full bg-black border-2 border-slate-700 rounded-xl p-3 font-bold text-white focus:border-cyan-500 outline-none uppercase placeholder:text-slate-600 text-xs"></textarea>
+            </section>
+
+            <button onclick="takeSnapshot()" id="snap-btn" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-comic text-2xl py-4 rounded-2xl shadow-xl shadow-cyan-900/20 active:scale-95 transition-all">
+                📸 SNAP PANEL!
+            </button>
         </div>
 
-        <div class="mt-8 bg-slate-900 p-6 rounded-[30px] border border-slate-800">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="font-black italic uppercase tracking-widest text-cyan-400 text-sm">Comic Strip Gallery</h3>
-                <button onclick="clearStrip()" class="text-[10px] text-slate-500 uppercase font-bold">Clear All</button>
+        <!-- Main Studio Area -->
+        <div class="lg:col-span-9 flex flex-col bg-black relative h-[calc(100vh-80px)]">
+            
+            <div id="studio-viewport" class="flex-1 relative overflow-hidden bg-slate-900">
+                <div id="loading-overlay" class="absolute inset-0 bg-slate-950 z-40 flex flex-col items-center justify-center hidden">
+                    <div class="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p class="font-comic text-xl text-cyan-400 animate-pulse uppercase">Building Scene...</p>
+                </div>
+
+                <div id="empty-state" class="absolute inset-0 z-30 flex flex-col items-center justify-center p-10 text-center pointer-events-none">
+                    <div class="text-8xl mb-6">🎬</div>
+                    <h2 class="text-4xl font-comic text-white mb-2 uppercase tracking-widest">Awaiting Actor...</h2>
+                    <p class="text-slate-500 font-black uppercase text-xs tracking-widest">Upload your Mixamo .GLB to start filming.</p>
+                </div>
+
+                <div id="speech-bubble" class="comic-bubble font-comic"></div>
+                <div id="three-container" class="w-full h-full cursor-move"></div>
+                
+                <div class="absolute bottom-6 right-6 opacity-30 pointer-events-none text-right">
+                    <p class="font-comic text-2xl text-white">KIDOVATE</p>
+                    <p class="text-[8px] font-black uppercase text-slate-400 tracking-tighter">Dummy 13 Official Studio</p>
+                </div>
             </div>
-            <div id="comic-strip" class="flex gap-4 overflow-x-auto pb-4 min-h-[160px] scrollbar-hide">
-                <p id="empty-msg" class="text-slate-700 font-bold uppercase text-xs m-auto">No panels yet...</p>
+
+            <!-- Comic Strip -->
+            <div class="h-64 bg-slate-950 border-t-4 border-cyan-900 p-4">
+                <div class="flex items-center justify-between mb-2 px-2">
+                    <h4 class="font-comic text-cyan-500 text-lg uppercase tracking-tighter">Your Comic Story</h4>
+                    <div class="flex gap-4">
+                        <button onclick="clearStrip()" class="text-[10px] font-black uppercase text-red-500 hover:text-red-400">Reset</button>
+                        <button onclick="saveFullComic()" class="bg-emerald-600 hover:bg-emerald-500 px-6 py-1 rounded-full text-xs font-black uppercase shadow-lg shadow-emerald-900/20 active:scale-95 transition-transform">Save Story</button>
+                    </div>
+                </div>
+                <div id="strip-container" class="flex gap-4 overflow-x-auto pb-4 h-40"></div>
             </div>
         </div>
     </main>
 
     <script>
-        let scene, camera, renderer, controls, model;
+        let scene, camera, renderer, controls, mixer, dummyModel;
+        let animations = [], currentAnimIndex = 0, isPaused = false, isFloating = false;
+        let clock = new THREE.Clock();
+        let autoBaseHeight = 0;
+        const textureLoader = new THREE.TextureLoader();
+
+        const container = document.getElementById('three-container');
+        const viewport = document.getElementById('studio-viewport');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const speechBubble = document.getElementById('speech-bubble');
+        const heightSlider = document.getElementById('heightOffset');
+
+        // --- Draggable Bubble ---
+        let isDraggingBubble = false, bubbleOffset = { x: 0, y: 0 };
+        speechBubble.addEventListener('mousedown', (e) => {
+            isDraggingBubble = true;
+            bubbleOffset.x = e.clientX - speechBubble.offsetLeft;
+            bubbleOffset.y = e.clientY - speechBubble.offsetTop;
+            speechBubble.style.animation = 'none';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDraggingBubble) return;
+            let x = e.clientX - bubbleOffset.x, y = e.clientY - bubbleOffset.y;
+            const rect = viewport.getBoundingClientRect(), bRect = speechBubble.getBoundingClientRect();
+            if (x < 0) x = 0; if (y < 0) y = 0;
+            if (x + bRect.width > rect.width) x = rect.width - bRect.width;
+            if (y + bRect.height > rect.height) y = rect.height - bRect.height;
+            speechBubble.style.left = x + 'px'; speechBubble.style.top = y + 'px';
+            speechBubble.style.transform = 'none';
+        });
+
+        window.addEventListener('mouseup', () => { 
+            if(isDraggingBubble) {
+                isDraggingBubble = false;
+                speechBubble.style.animation = 'floating 3s ease-in-out infinite';
+            }
+        });
 
         function init() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x1e293b);
-            camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
-            camera.position.set(0, 0, 10);
+            scene.background = new THREE.Color(0x0f172a); 
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 1.5, 5);
 
             renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-            const container = document.getElementById('canvas-container');
-            renderer.setSize(container.offsetWidth, container.offsetHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.outputEncoding = THREE.sRGBEncoding;
             container.appendChild(renderer.domElement);
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
-            scene.add(new THREE.AmbientLight(0xffffff, 1.0));
-            const light = new THREE.DirectionalLight(0xffffff, 1);
-            light.position.set(5, 10, 7);
-            scene.add(light);
+            controls.target.set(0, 1, 0);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+            const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+            sun.position.set(5, 10, 7);
+            scene.add(sun);
+
+            // Ground Floor Reference
+            const floorGeom = new THREE.PlaneGeometry(10, 10);
+            const floorMat = new THREE.MeshPhongMaterial({ color: 0x000000, transparent: true, opacity: 0.2 });
+            const floor = new THREE.Mesh(floorGeom, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.y = -0.01;
+            scene.add(floor);
+
+            const grid = new THREE.GridHelper(10, 20, 0x334155, 0x1e293b);
+            scene.add(grid);
+
+            // Default BG
+            changeBG('space', document.querySelector('.scene-card'));
+            
             animate();
         }
 
-        document.getElementById('modelUpload').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            document.getElementById('upload-overlay').style.display = 'none';
-            const loader = new THREE.GLTFLoader();
-            loader.load(URL.createObjectURL(file), (gltf) => {
-                if (model) scene.remove(model);
-                model = gltf.scene;
-                const box = new THREE.Box3().setFromObject(model);
-                const size = box.getSize(new THREE.Vector3());
-                const maxDim = Math.max(size.x, size.y, size.z);
-                let scale = 5.5 / (maxDim || 1); 
-                model.scale.set(scale, scale, scale);
-                const center = box.getCenter(new THREE.Vector3());
-                model.position.x = -center.x * scale;
-                model.position.z = -center.z * scale;
-                model.position.y = (-box.min.y * scale) - 3.8; 
-                scene.add(model);
-                controls.reset();
+        function changeBG(type, el) {
+            document.querySelectorAll('.scene-card').forEach(c => c.classList.remove('active'));
+            if(el) el.classList.add('active');
+
+            const bgMap = {
+                'space': 'https://images.unsplash.com/photo-1614730321146-b6fa6a46bac4?q=80&w=1200&auto=format&fit=crop',
+                'city': 'https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1200&auto=format&fit=crop',
+                'volcano': 'https://images.unsplash.com/photo-1531000164940-cde686a49fc4?q=80&w=1200&auto=format&fit=crop',
+                'dojo': 'https://images.unsplash.com/photo-1555597673-b21d5c935865?q=80&w=1200&auto=format&fit=crop'
+            };
+
+            textureLoader.load(bgMap[type], (texture) => {
+                texture.encoding = THREE.sRGBEncoding;
+                scene.background = texture;
             });
-        });
+        }
+
+        function resetHeight() {
+            heightSlider.value = 0;
+            updateModelPosition();
+        }
+
+        function toggleFlight() {
+            isFloating = !isFloating;
+            const icon = document.getElementById('flight-icon');
+            const text = document.getElementById('flight-text');
+            const btn = document.getElementById('btn-flight');
+            
+            if (isFloating) {
+                icon.innerText = "🚀";
+                text.innerText = "Flight Mode";
+                btn.classList.add('border-cyan-500', 'text-cyan-400');
+            } else {
+                icon.innerText = "🦶";
+                text.innerText = "Grounded";
+                btn.classList.remove('border-cyan-500', 'text-cyan-400');
+                updateModelPosition();
+            }
+        }
+
+        function updateModelPosition() {
+            if (!dummyModel) return;
+            const manualY = parseFloat(heightSlider.value);
+            dummyModel.position.y = autoBaseHeight + manualY;
+        }
+
+        heightSlider.addEventListener('input', updateModelPosition);
 
         function animate() {
             requestAnimationFrame(animate);
-            if (controls) controls.update();
-            if (renderer) renderer.render(scene, camera);
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            if (mixer && !isPaused) mixer.update(delta);
+            
+            // Apply floating animation to Dummy if mode is ON
+            if (dummyModel && isFloating) {
+                const manualY = parseFloat(heightSlider.value);
+                dummyModel.position.y = autoBaseHeight + manualY + Math.sin(time * 2) * 0.2 + 0.5;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
         }
 
-        document.getElementById('bubbleInput').addEventListener('input', (e) => {
-            const b = document.getElementById('speech-bubble');
-            b.style.display = e.target.value ? 'block' : 'none';
-            b.innerText = e.target.value;
+        document.getElementById('modelUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            loadingOverlay.classList.remove('hidden');
+            document.getElementById('empty-state').classList.add('hidden');
+            const url = URL.createObjectURL(file);
+            const loader = new THREE.GLTFLoader();
+            loader.load(url, (gltf) => {
+                if (dummyModel) scene.remove(dummyModel);
+                dummyModel = gltf.scene;
+                
+                // Calculate Grounding
+                const box = new THREE.Box3().setFromObject(dummyModel);
+                const size = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+                
+                const scale = 2.5 / (Math.max(size.x, size.y, size.z) || 1);
+                dummyModel.scale.set(scale, scale, scale);
+                
+                // Set autoBaseHeight
+                autoBaseHeight = -box.min.y * scale;
+                updateModelPosition();
+
+                animations = gltf.animations;
+                mixer = new THREE.AnimationMixer(dummyModel);
+                if (animations.length > 0) mixer.clipAction(animations[0]).play();
+                scene.add(dummyModel);
+                loadingOverlay.classList.add('hidden');
+                document.getElementById('uploadLabel').innerHTML = `<span class="text-emerald-400 font-bold text-xs uppercase">✓ Actor Loaded</span>`;
+            });
         });
 
-        const bubble = document.getElementById('speech-bubble');
-        let isDragging = false;
-        let startX, startY, startL, startT;
+        document.getElementById('dialogueInput').addEventListener('input', (e) => {
+            const text = e.target.value.trim();
+            speechBubble.innerText = text;
+            speechBubble.style.display = text ? 'block' : 'none';
+        });
 
-        bubble.onmousedown = (e) => {
-            isDragging = true;
-            startX = e.clientX; startY = e.clientY;
-            startL = bubble.offsetLeft; startT = bubble.offsetTop;
-            bubble.style.transform = 'none';
-        };
-        document.onmousemove = (e) => {
-            if (!isDragging) return;
-            bubble.style.left = (startL + (e.clientX - startX)) + 'px';
-            bubble.style.top = (startT + (e.clientY - startY)) + 'px';
-        };
-        document.onmouseup = () => isDragging = false;
+        function cycleAnimation() {
+            if (!animations.length) return;
+            currentAnimIndex = (currentAnimIndex + 1) % animations.length;
+            mixer.stopAllAction();
+            mixer.clipAction(animations[currentAnimIndex]).reset().fadeIn(0.2).play();
+        }
 
-        function changeBg(color) { scene.background = new THREE.Color(color); }
+        function togglePause() {
+            isPaused = !isPaused;
+            document.getElementById('pause-icon').innerText = isPaused ? "▶️" : "⏸️";
+            document.getElementById('pause-text').innerText = isPaused ? "Resume" : "Pause";
+        }
 
-        function snapPanel() {
-            const area = document.getElementById('capture-area');
-            const gallery = document.getElementById('comic-strip');
-            html
+        function takeSnapshot() {
+            if (!dummyModel) return alert("Load a character first!");
+            const btn = document.getElementById('snap-btn');
+            btn.innerText = "CAPTURING...";
+            html2canvas(viewport, { backgroundColor: null, useCORS: true, scale: 2 }).then(canvas => {
+                const imgData = canvas.toDataURL("image/png");
+                const strip = document.getElementById('strip-container');
+                const wrapper = document.createElement('div');
+                wrapper.className = "relative shrink-0 h-full border-4 border-black bg-white group";
+                wrapper.innerHTML = `<img src="${imgData}" class="h-full w-auto"><button onclick="this.parentElement.remove()" class="absolute -top-2 -right-2 bg-red-600 text-white w-6 h-6 rounded-full font-black border-2 border-black flex items-center justify-center text-xs opacity-0 group-hover:opacity-100">X</button>`;
+                strip.appendChild(wrapper);
+                strip.scrollLeft = strip.scrollWidth;
+                btn.innerText = "📸 SNAP PANEL!";
+                speechBubble.style.display = 'none';
+                document.getElementById('dialogueInput').value = '';
+            });
+        }
+
+        function clearStrip() { if (confirm("Clear story?")) document.getElementById('strip-container').innerHTML = ''; }
+
+        function saveFullComic() {
+            const strip = document.getElementById('strip-container');
+            if (!strip.children.length) return alert("Snap some panels first!");
+            const btns = strip.querySelectorAll('button');
+            btns.forEach(b => b.style.display = 'none');
+            html2canvas(strip, { backgroundColor: '#000', height: strip.scrollHeight, width: strip.scrollWidth }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `ComicStory_${Date.now()}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+                btns.forEach(b => b.style.display = 'flex');
+            });
+        }
+
+        window.onload = init;
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+    </script>
+</body>
+</html>
