@@ -13,459 +13,56 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        
-        /* Comic Book Speech Bubble CSS */
-        .comic-bubble {
-            position: absolute;
-            top: 10%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #ffffff;
-            border: 4px solid #000;
-            border-radius: 30px;
-            padding: 15px 30px;
-            text-align: center;
-            font-weight: 900;
-            color: #000;
-            font-size: 1.5rem;
-            text-transform: uppercase;
-            box-shadow: 8px 8px 0px rgba(0,0,0,1);
-            z-index: 15;
-            max-width: 80%;
-            display: none;
-            word-wrap: break-word;
-        }
-        .comic-bubble::after {
-            content: '';
-            position: absolute;
-            bottom: -20px;
-            left: 50%;
-            border-width: 20px 20px 0 0;
-            border-style: solid;
-            border-color: #ffffff transparent transparent transparent;
-            display: block;
-            width: 0;
-            z-index: 1;
-        }
-        .comic-bubble::before {
-            content: '';
-            position: absolute;
-            bottom: -26px;
-            left: 48%;
-            border-width: 24px 24px 0 0;
-            border-style: solid;
-            border-color: #000 transparent transparent transparent;
-            display: block;
-            width: 0;
-            z-index: 0;
-        }
-
-        .tab-active { border-bottom: 4px solid #06b6d4; color: #06b6d4; }
-        .tab-inactive { color: #64748b; border-bottom: 4px solid transparent; }
-        .tab-inactive:hover { color: #cbd5e1; }
-        
-        /* Hide scrollbars */
+        body { font-family: 'Segoe UI', sans-serif; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        .comic-bubble {
+            position: absolute; top: 10%; left: 50%; transform: translateX(-50%);
+            background: white; border: 4px solid black; border-radius: 30px;
+            padding: 15px 30px; text-align: center; font-weight: 900;
+            color: black; font-size: 1.2rem; text-transform: uppercase;
+            box-shadow: 6px 6px 0px rgba(0,0,0,1); z-index: 15;
+            max-width: 80%; display: none; word-wrap: break-word;
+        }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
 
-    <nav class="bg-slate-900 border-b border-slate-800 shadow-lg sticky top-0 z-50">
-        <div class="max-w-5xl mx-auto px-4">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center gap-2">
-                    <span class="text-2xl">🦸‍♂️</span>
-                    <span class="font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 text-xl">
-                        KIDOVATE COMIC STUDIO
-                    </span>
-                </div>
-                <div class="flex gap-6 font-bold text-sm tracking-widest uppercase h-full hidden sm:flex">
-                    <button onclick="switchTab('studio')" id="btn-studio" class="tab-active flex items-center px-2 h-full transition-colors">Studio</button>
-                    <button onclick="switchTab('about')" id="btn-about" class="tab-inactive flex items-center px-2 h-full transition-colors">About</button>
-                </div>
+    <nav class="bg-slate-900 border-b border-slate-800 p-4 shadow-lg sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl">🦸‍♂️</span>
+                <span class="font-black italic text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 text-xl uppercase">
+                    KIDOVATE STUDIO
+                </span>
+            </div>
+            <div class="flex gap-6 font-bold text-sm uppercase">
+                <a href="index.html" class="text-cyan-400 border-b-2 border-cyan-400 pb-1">Studio</a>
+                <a href="about.html" class="text-slate-400 hover:text-white transition">About</a>
+                <a href="updates.html" class="text-slate-400 hover:text-white transition">Updates</a>
             </div>
         </div>
     </nav>
 
     <main class="flex-1 max-w-5xl mx-auto w-full p-4 md:p-6">
-
-        <section id="tab-studio" class="block animate-fade-in">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                <div class="lg:col-span-2">
-                    <div id="capture-area" class="relative bg-slate-900 rounded-3xl overflow-hidden border-4 border-slate-800 shadow-2xl h-[400px] sm:h-[500px]">
-                        
-                        <div id="speech-bubble" class="comic-bubble"></div>
+            <div class="lg:col-span-2">
+                <div id="capture-area" class="relative bg-slate-900 rounded-3xl overflow-hidden border-4 border-slate-800 shadow-2xl h-[450px] sm:h-[550px]">
+                    <div id="speech-bubble" class="comic-bubble"></div>
+                    <div id="canvas-container" class="w-full h-full cursor-move"></div>
 
-                        <div id="canvas-container" class="w-full h-full cursor-move"></div>
-
-                        <div id="upload-overlay" class="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center z-20 p-6 overflow-y-auto">
-                            <div class="text-5xl mb-2 animate-bounce">🎬</div>
-                            <h2 class="text-2xl md:text-3xl font-black text-white uppercase tracking-widest mb-6 text-center">Director's Chair</h2>
-                            
-                            <div class="bg-slate-900 border border-slate-700 p-5 md:p-6 rounded-2xl max-w-md w-full mb-6 shadow-xl text-left">
-                                <h3 class="text-cyan-400 font-bold uppercase tracking-widest text-xs mb-4 flex items-center gap-2">
-                                    <span>📚</span> How to start:
-                                </h3>
-                                <p class="text-slate-300 text-sm mb-2">Upload your 3D character file to begin building your comic strip panel!</p>
-                                <p class="text-slate-400 text-xs italic">Requires a .GLB file format.</p>
-                            </div>
-
-                            <input type="file" id="modelUpload" accept=".glb" class="hidden">
-                            <label for="modelUpload" class="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black px-8 py-4 rounded-2xl shadow-[0_0_20px_rgba(6,182,212,0.3)] cursor-pointer active:scale-95 transition-all uppercase tracking-widest flex items-center gap-2">
-                                <span>📁</span> Upload to Studio
-                            </label>
-                        </div>
-                    </div>
-
-                    <p class="text-center text-slate-500 text-xs mt-3 font-bold tracking-widest uppercase">
-                        👆 Click and drag to rotate! Scroll or pinch to zoom.
-                    </p>
-                </div>
-
-                <div class="flex flex-col gap-4">
-                    
-                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl">
-                        <h3 class="text-cyan-400 font-bold uppercase tracking-widest text-xs mb-3">1. Add Dialogue</h3>
-                        <textarea id="dialogueInput" rows="3" placeholder="Type what your character is saying..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-cyan-500 transition-colors resize-none"></textarea>
-                    </div>
-
-                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl">
-                        <h3 class="text-cyan-400 font-bold uppercase tracking-widest text-xs mb-3">2. Choose Scene</h3>
-                        <div class="grid grid-cols-4 gap-2">
-                            <button onclick="setBackground('color', 0x1e293b)" class="h-10 rounded-lg bg-[#1e293b] border-2 border-slate-700 hover:border-cyan-400 active:scale-95 transition-all" title="Dark Studio"></button>
-                            <button onclick="setBackground('color', 0x065f46)" class="h-10 rounded-lg bg-[#065f46] border-2 border-slate-700 hover:border-cyan-400 active:scale-95 transition-all" title="Green Screen"></button>
-                            <button onclick="setBackground('image', 'https://images.unsplash.com/photo-1618553255141-86f78f8fc857?q=80&w=800&auto=format&fit=crop')" class="h-10 rounded-lg bg-cover bg-center border-2 border-slate-700 hover:border-cyan-400 active:scale-95 transition-all" style="background-image: url('https://images.unsplash.com/photo-1618553255141-86f78f8fc857?q=80&w=100&auto=format&fit=crop')" title="Sci-Fi Corridor"></button>
-                            <button onclick="setBackground('image', 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=800&auto=format&fit=crop')" class="h-10 rounded-lg bg-cover bg-center border-2 border-slate-700 hover:border-cyan-400 active:scale-95 transition-all" style="background-image: url('https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=100&auto=format&fit=crop')" title="Neon City"></button>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl">
-                        <h3 class="text-cyan-400 font-bold uppercase tracking-widest text-xs mb-3">3. Strike a Pose</h3>
-                        <button id="btn-pause" onclick="toggleAnimation()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-black py-3 rounded-xl border border-slate-700 active:scale-95 transition-all uppercase tracking-widest disabled:opacity-50">
-                            ⏸️ Pause Pose
-                        </button>
-                    </div>
-
-                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl mt-auto">
-                        <h3 class="text-cyan-400 font-bold uppercase tracking-widest text-xs mb-3">4. Action!</h3>
-                        <button onclick="takePhoto()" id="btn-photo" class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white font-black py-4 rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.4)] active:scale-95 transition-all text-lg flex justify-center items-center gap-2">
-                            <span>📸</span> SNAP PANEL
-                        </button>
-                        <p class="text-center text-[10px] text-slate-500 mt-3 font-bold uppercase tracking-widest">
-                            Share your comic with <br><span class="text-cyan-400">#Kidovate</span>
-                        </p>
-                    </div>
-
-                </div>
-            </div>
-
-            <div class="mt-8 bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-4 gap-4">
-                    <div>
-                        <h3 class="text-2xl font-black italic tracking-tighter text-white">YOUR COMIC STRIP</h3>
-                        <p class="text-slate-400 text-xs uppercase tracking-widest mt-1">Take multiple photos to build a story!</p>
-                    </div>
-                    <div class="flex gap-2 w-full sm:w-auto">
-                        <button onclick="clearStrip()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-xl text-sm transition-all active:scale-95">Clear All</button>
-                        <button onclick="downloadStrip()" class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white font-black py-2 px-6 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all active:scale-95 flex items-center justify-center gap-2">
-                            <span>📥</span> SAVE FULL COMIC
-                        </button>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto pb-4">
-                    <div id="comic-strip-board" class="bg-white p-4 flex gap-4 min-w-min min-h-[200px] items-center rounded-sm">
-                        <div id="strip-placeholder" class="w-full text-center text-slate-400 font-bold uppercase tracking-widest py-10">
-                            No panels yet. Snap a panel to start your comic!
-                        </div>
+                    <div id="upload-overlay" class="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center z-20 p-6">
+                        <div class="text-5xl mb-4 animate-bounce">🎬</div>
+                        <h2 class="text-2xl font-black text-white uppercase tracking-tighter mb-6">Director's Chair</h2>
+                        <input type="file" id="modelUpload" accept=".glb" class="hidden">
+                        <label for="modelUpload" class="bg-cyan-600 hover:bg-cyan-500 text-white font-black px-10 py-5 rounded-2xl shadow-xl cursor-pointer active:scale-95 transition-all uppercase tracking-widest">
+                            📁 Upload Character (.glb)
+                        </label>
+                        <p class="text-slate-500 text-[10px] mt-6 uppercase font-bold">Use the converted Mixamo file</p>
                     </div>
                 </div>
             </div>
 
-        </section>
-
-        <section id="tab-about" class="hidden animate-fade-in">
-            <div class="max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-8 md:p-12 shadow-2xl mt-4">
-                <div class="text-center mb-8">
-                    <h2 class="text-4xl font-black italic tracking-tighter text-white mb-2">ABOUT OUR KIDOVATE PROJECT</h2>
-                    <div class="w-24 h-1 bg-gradient-to-r from-cyan-500 to-blue-500 mx-auto rounded-full"></div>
-                </div>
-                <div class="prose prose-invert prose-lg mx-auto">
-                    <p class="text-slate-300 leading-relaxed text-center">
-                        Welcome to our Kidovate booth! This digital comic studio allows you to upload 3D character models, pose them, add speech bubbles, and generate comic book panels entirely in your browser.
-                    </p>
-                    <p class="text-slate-400 leading-relaxed text-center text-sm mt-4">
-                        Snap some panels, build a story, and don't forget to tag us online with <strong>#Kidovate</strong>!
-                    </p>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-<script>
-    // ==========================================
-    // TAB NAVIGATION
-    // ==========================================
-    const tabs = ['studio', 'about'];
-    function switchTab(selectedTab) {
-        tabs.forEach(tab => {
-            const btn = document.getElementById(`btn-${tab}`);
-            const section = document.getElementById(`tab-${tab}`);
-            if (btn && section) {
-                if (tab === selectedTab) {
-                    btn.className = "tab-active flex items-center px-2 h-full transition-colors";
-                    section.classList.remove('hidden');
-                    section.classList.add('block');
-                } else {
-                    btn.className = "tab-inactive flex items-center px-2 h-full transition-colors";
-                    section.classList.add('hidden');
-                    section.classList.remove('block');
-                }
-            }
-        });
-    }
-
-    // ==========================================
-    // 3D STUDIO LOGIC
-    // ==========================================
-    const container = document.getElementById('canvas-container');
-    const uploadOverlay = document.getElementById('upload-overlay');
-    const dialogueInput = document.getElementById('dialogueInput');
-    const speechBubble = document.getElementById('speech-bubble');
-    const btnPause = document.getElementById('btn-pause');
-    
-    let scene, camera, renderer, orbitControls;
-    let clock = new THREE.Clock();
-    let mixer, animationAction;
-    let isPlaying = true;
-    let modelLoaded = false;
-
-    function init3D() {
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1e293b); 
-
-        camera = new THREE.PerspectiveCamera(45, container.offsetWidth / container.offsetHeight, 0.1, 100);
-        camera.position.set(0, 0, 4); // Centered camera
-
-        renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-        renderer.setSize(container.offsetWidth, container.offsetHeight);
-        renderer.outputEncoding = THREE.sRGBEncoding;
-        container.appendChild(renderer.domElement);
-
-        orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
-        orbitControls.enableDamping = true;
-        orbitControls.dampingFactor = 0.05;
-        orbitControls.target.set(0, 0, 0); // Look at exact center
-
-        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-        dirLight.position.set(5, 10, 7);
-        scene.add(dirLight);
-        
-        const backLight = new THREE.DirectionalLight(0x06b6d4, 1.5);
-        backLight.position.set(-5, 5, -5);
-        scene.add(backLight);
-
-        animate();
-    }
-
-    document.getElementById('modelUpload').addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        uploadOverlay.classList.add('hidden');
-        
-        const url = URL.createObjectURL(file);
-        const loader = new THREE.GLTFLoader();
-
-        loader.load(url, (gltf) => {
-            const model = gltf.scene;
-            
-            // Meshy Clean-up (Removes invisible cameras that break zooming)
-            const junkToRemove = [];
-            model.traverse((child) => {
-                if (child.isCamera || child.isLight) junkToRemove.push(child);
-            });
-            junkToRemove.forEach(child => {
-                if (child.parent) child.parent.remove(child);
-            });
-
-            // Auto-scale & Center
-            const box = new THREE.Box3().setFromObject(model);
-            const size = box.getSize(new THREE.Vector3());
-            const scale = 2.5 / (Math.max(size.x, size.y, size.z) || 1); 
-            model.scale.set(scale, scale, scale);
-            
-            const center = box.getCenter(new THREE.Vector3());
-            model.position.x = -center.x * scale;
-            model.position.z = -center.z * scale;
-            model.position.y = -center.y * scale; // Center perfectly
-
-            scene.add(model);
-            modelLoaded = true;
-
-            // Check for Animations
-            if (gltf.animations && gltf.animations.length > 0) {
-                mixer = new THREE.AnimationMixer(model);
-                animationAction = mixer.clipAction(gltf.animations[0]);
-                animationAction.play();
-                btnPause.disabled = false;
-                btnPause.innerText = "⏸️ Pause Pose";
-            } else {
-                btnPause.innerText = "No Animation Found";
-                btnPause.disabled = true;
-            }
-        });
-    });
-
-    function animate() {
-        requestAnimationFrame(animate);
-        const delta = clock.getDelta();
-        if (mixer && isPlaying) mixer.update(delta);
-        orbitControls.update();
-        renderer.render(scene, camera);
-    }
-
-    function toggleAnimation() {
-        if (!mixer) return;
-        isPlaying = !isPlaying;
-        if (isPlaying) {
-            btnPause.innerText = "⏸️ Pause Pose";
-            btnPause.classList.replace('bg-green-600', 'bg-slate-800');
-        } else {
-            btnPause.innerText = "▶️ Play Animation";
-            btnPause.classList.replace('bg-slate-800', 'bg-green-600');
-        }
-    }
-
-    dialogueInput.addEventListener('input', (e) => {
-        const text = e.target.value.trim();
-        if (text === '') {
-            speechBubble.style.display = 'none';
-        } else {
-            speechBubble.style.display = 'block';
-            speechBubble.innerText = text;
-        }
-    });
-
-    function setBackground(type, value) {
-        if (!scene) return;
-        if (type === 'color') {
-            scene.background = new THREE.Color(value);
-        } else if (type === 'image') {
-            const loader = new THREE.TextureLoader();
-            loader.load(value, (texture) => {
-                texture.encoding = THREE.sRGBEncoding;
-                scene.background = texture;
-            });
-        }
-    }
-
-    window.addEventListener('resize', () => {
-        if(camera && renderer && container.offsetWidth > 0) {
-            camera.aspect = container.offsetWidth / container.offsetHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.offsetWidth, container.offsetHeight);
-        }
-    });
-
-    // ==========================================
-    // SCREENSHOT & COMIC STRIP LOGIC
-    // ==========================================
-    function takePhoto() {
-        if (!modelLoaded) {
-            alert("Please load a character first!");
-            return;
-        }
-
-        const captureArea = document.getElementById('capture-area');
-        const btnPhoto = document.getElementById('btn-photo');
-        const stripBoard = document.getElementById('comic-strip-board');
-        const placeholder = document.getElementById('strip-placeholder');
-        
-        btnPhoto.innerHTML = "Processing...";
-        btnPhoto.classList.add('opacity-50');
-
-        html2canvas(captureArea, {
-            backgroundColor: null,
-            useCORS: true
-        }).then(canvas => {
-            const image = canvas.toDataURL("image/png");
-            if (placeholder) placeholder.style.display = 'none';
-
-            const panel = document.createElement('div');
-            panel.className = 'relative shrink-0 border-4 border-black group';
-            // Scale dynamically based on screen size
-            const widthStr = window.innerWidth < 600 ? '200px' : '300px';
-            panel.style.width = widthStr; 
-            
-            panel.innerHTML = `
-                <img src="${image}" class="w-full h-auto block">
-                <button onclick="this.parentElement.remove(); checkEmptyStrip();" class="absolute top-2 right-2 bg-red-600 text-white w-8 h-8 rounded-full font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center shadow-lg cursor-pointer">X</button>
-            `;
-            
-            stripBoard.appendChild(panel);
-            btnPhoto.innerHTML = "<span>📸</span> SNAP PANEL";
-            btnPhoto.classList.remove('opacity-50');
-            stripBoard.parentElement.scrollLeft = stripBoard.parentElement.scrollWidth;
-        });
-    }
-
-    function checkEmptyStrip() {
-        const stripBoard = document.getElementById('comic-strip-board');
-        const placeholder = document.getElementById('strip-placeholder');
-        const panels = stripBoard.querySelectorAll('.shrink-0');
-        if (panels.length === 0 && placeholder) {
-            placeholder.style.display = 'block';
-        }
-    }
-
-    function clearStrip() {
-        if(confirm("Are you sure you want to clear your comic strip?")) {
-            const stripBoard = document.getElementById('comic-strip-board');
-            const placeholder = document.getElementById('strip-placeholder');
-            const panels = stripBoard.querySelectorAll('.shrink-0');
-            panels.forEach(p => p.remove());
-            if (placeholder) placeholder.style.display = 'block';
-        }
-    }
-
-    function downloadStrip() {
-        const stripBoard = document.getElementById('comic-strip-board');
-        const panels = stripBoard.querySelectorAll('.shrink-0');
-        
-        if (panels.length === 0) {
-            alert("Snap some panels first to build your comic!");
-            return;
-        }
-
-        const deleteBtns = stripBoard.querySelectorAll('button');
-        deleteBtns.forEach(b => b.style.display = 'none');
-
-        html2canvas(stripBoard, {
-            backgroundColor: '#ffffff',
-            useCORS: true
-        }).then(canvas => {
-            const image = canvas.toDataURL("image/png");
-            const link = document.createElement('a');
-            link.download = 'My_Kidovate_Comic_Strip.png';
-            link.href = image;
-            link.click();
-            deleteBtns.forEach(b => b.style.display = '');
-        });
-    }
-
-    // Start 3D Engine on load
-    init3D();
-
-</script>
-</body>
-</html>
-
-
-                    
+            <div class="flex flex-col gap-4">
+                <div class="bg-slate-900 border border-slate-800 p-
